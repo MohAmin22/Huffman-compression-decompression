@@ -9,6 +9,7 @@ public class Compression {
     private String inputPath;
     private int numberOfBytesPerWord;
     private long fileSizeInBytes;
+    private byte[] lastByteArray;
 
     public void compress(String inputPath, int numberOfBytesPerWord) {
         try {
@@ -40,9 +41,13 @@ public class Compression {
         Map<ByteArrayWrapper, Long> frequencyTable = new HashMap<>();
         //read byte[numberOfBytesPerWord] from input
         byte[] buffer = new byte[numberOfBytesPerWord];
-        int bytesRead = 0;
+        int bytesRead;
         while ((bytesRead = bufferedInputStream.read(buffer)) != -1) {
             //put byte[] in frequency table ------------------------------- numberOfBytesPerWord instead of bytesRead in case of errors
+            if (bytesRead < numberOfBytesPerWord) {
+                this.lastByteArray = Arrays.copyOf(buffer, bytesRead);
+                break;
+            }
             byte[] currentBuffer = Arrays.copyOf(buffer, bytesRead); // To enforce mutability of map keys
             frequencyTable.put(new ByteArrayWrapper(currentBuffer),
                     frequencyTable.getOrDefault(new ByteArrayWrapper(currentBuffer), 0L) + 1L);
@@ -115,10 +120,18 @@ public class Compression {
         FileOutputStream fos = new FileOutputStream(outputPath);
         ObjectOutputStream oos = new ObjectOutputStream(fos);
         oos.writeObject(huffmanTable);
+        // Store last byte[] size then the array itself
+        if (this.lastByteArray != null) { // Aware of null pointer exception if the lastByteArray is never set in the frequency construction
+            oos.writeInt(this.lastByteArray.length);
+            oos.write(this.lastByteArray);
+        } else {
+            oos.writeInt(0);
+        }
         // Flush the ObjectOutputStream to ensure all buffered data is sent to the OS to write into the file
         oos.flush();
         return fos;
     }
+
     private String binarySearch(List<WordCodePair> huffmanTable, ByteArrayWrapper word) {
         huffmanTable.sort((o1, o2) -> Arrays.compare(o1.getWord(), o2.getWord()));
         int wordCodeIndex = Collections.binarySearch(huffmanTable, new WordCodePair(word.getBuffer(), ""),
@@ -126,31 +139,39 @@ public class Compression {
         assert wordCodeIndex >= 0;
         return huffmanTable.get(wordCodeIndex).getCode();
     }
-    private void encodeAndCompress(FileOutputStream fos, List<WordCodePair> huffmanTable) throws FileNotFoundException {
+
+    private void encodeAndCompress(FileOutputStream fos, List<WordCodePair> huffmanTable) throws IOException {
         BufferedInputStream bufferedInputStream = createInputStream();
+        BitOutputStream bitOutputStream = new BitOutputStream(fos);
         try {
             //read byte[numberOfBytesPerWord] from input
             byte[] buffer = new byte[numberOfBytesPerWord];
-            int bytesRead = 0;
-            long ByteCountWithoutLastByte = (this.fileSizeInBytes / this.numberOfBytesPerWord) * this.numberOfBytesPerWord;
-            long currentByteCount = 0;
+            int bytesRead;
             // Set bitOutputStream for bit manipulation
             //BitOutputStream bos = new BitOutputStream(fos);
             while ((bytesRead = bufferedInputStream.read(buffer)) != -1) { // bytesRead in the last byte group may be n or less
-                currentByteCount += bytesRead;
+                if(bytesRead < numberOfBytesPerWord) break; // Last byte[] was saved in the file
                 // Find the code of the current word
                 String code = this.binarySearch(huffmanTable, new ByteArrayWrapper(buffer));
                 // Write the code to the output file
-                for(char c : code.toCharArray()){
-                    fos.write(c);
+                for (char c : code.toCharArray()) {
+                    if(c == '0') {
+                        bitOutputStream.writeBit(false);
+                    } else if(c == '1') {
+                        bitOutputStream.writeBit(true);
+                    }else {
+                        throw new IllegalArgumentException();
+                    }
                 }
-                if (currentByteCount >= ByteCountWithoutLastByte) break;
             }
-            if (currentByteCount >= ByteCountWithoutLastByte) {
-
-            }
+            bitOutputStream.endWriting();
+            // Flush the bitOutputStream to ensure all buffered data is sent to the OS to write into the file
+            bitOutputStream.flush();
         } catch (IOException e) {
             System.out.println(e.getMessage());
+        }finally {
+            bufferedInputStream.close();
+            bitOutputStream.close();
         }
     }
 
@@ -172,10 +193,11 @@ public class Compression {
         List<WordCodePair> huffmanTable = constructHuffmanTable(root);
         // Write huffman table to file
         FileOutputStream fos = storeHuffmanTable(huffmanTable);
+        // Set bitOutputStream for bit manipulation
         // Encode and compress the file
         encodeAndCompress(fos, huffmanTable);
         // Close the open streams
-        closeStreams(fos);
+        //closeStreams(fos);
     }
 
 

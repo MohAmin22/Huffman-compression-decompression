@@ -7,7 +7,7 @@ import java.util.*;
 public class Test {
     private final String inputPath = "/home/mohamed/CSED_25/Year_3/Algo/Huffman Compression/input.txt";
     private long fileSizeInBytes;
-    private final int numberOfBytesPerWord = 1;
+    private final int numberOfBytesPerWord = 2;
 
     void testSeparator() {
         System.out.println(File.separatorChar);
@@ -121,8 +121,10 @@ public class Test {
         // Flush the ObjectOutputStream to ensure all buffered data is sent to the OS to write into the file
 
         //test to append an integer to the end of the file
-        oos.writeInt(5);
-        oos.writeUTF("hi");
+        oos.writeLong(8);
+        byte[] arr = new byte[]{0b011, 0b11, 0b111};
+        //oos.writeUTF("hi");
+        oos.write(arr);
         oos.writeObject(huffmanTable);
 
 
@@ -134,18 +136,69 @@ public class Test {
         FileInputStream fis = new FileInputStream(filePath);
         ObjectInputStream ois = new ObjectInputStream(fis);
         String s;
-        int a;
+        long a;
         List<WordCodePair> h2;
+        byte[] buf;
         try {
             huffmanTable = (List<WordCodePair>) ois.readObject();
-             a = ois.readInt();
-             s = ois.readUTF();
+             a = ois.readLong();
+             //s = ois.readUTF();
+            buf = ois.readNBytes(3);
              h2 = (List<WordCodePair>) ois.readObject();
 
         } catch (EOFException e) {
             System.out.println("End of file reached");
         }
         return huffmanTable;
+    }
+    private String binarySearch(List<WordCodePair> huffmanTable, ByteArrayWrapper word) {
+        huffmanTable.sort((o1, o2) -> Arrays.compare(o1.getWord(), o2.getWord()));
+        int wordCodeIndex = Collections.binarySearch(huffmanTable, new WordCodePair(word.getBuffer(), ""),
+                (o1, o2) -> Arrays.compare(o1.getWord(), o2.getWord()));
+        assert wordCodeIndex >= 0;
+        return  wordCodeIndex >= 0 ? huffmanTable.get(wordCodeIndex).getCode() : "Not found";
+    }
+    void testOutput() throws IOException {
+        FileOutputStream fos = new FileOutputStream("/home/mohamed/CSED_25/Year_3/Algo/Huffman Compression/out.txt");
+        ObjectOutputStream oos = new ObjectOutputStream(fos);
+        byte x = (byte) 0b111;
+        byte[] r = new byte[]{x};
+        for(int i = 0 ; i < 10; i++) {
+            oos.write(r);
+        }
+        oos.flush();
+        FileInputStream fis = new FileInputStream("/home/mohamed/CSED_25/Year_3/Algo/Huffman Compression/out.txt");
+        ObjectInputStream ois = new ObjectInputStream(fis);
+        for(int i = 0 ; i < 10; i++) {
+            System.out.println(ois.readByte());
+        }
+//        int a = -1;
+//        oos.writeInt(-1);
+//        oos.writeInt(1);
+//        oos.writeInt(5);
+//        oos.writeInt(3);
+    }
+    void testOutput2() throws IOException {
+        FileOutputStream fos = new FileOutputStream("/home/mohamed/CSED_25/Year_3/Algo/Huffman Compression/out.txt");
+        BufferedOutputStream bof = new BufferedOutputStream(fos);
+        byte x = (byte) 0b111;
+        byte[] r = new byte[]{x};
+        for(int i = 0 ; i < 10; i++) {
+            byte[] r1 = new byte[]{(byte) (x + i)};
+            bof.write(r1);
+        }
+        bof.flush();
+        FileInputStream fis = new FileInputStream("/home/mohamed/CSED_25/Year_3/Algo/Huffman Compression/out.txt");
+        BufferedInputStream ois = new BufferedInputStream(fis);
+        byte[] b = new byte[1];
+        for(int i = 0 ; i < 10; i++) {
+            System.out.println(ois.read(b));
+        }
+//        int a = -1;
+//        oos.writeInt(-1);
+//        oos.writeInt(1);
+//        oos.writeInt(5);
+//        oos.writeInt(3);
     }
 
     void test() throws IOException, ClassNotFoundException {
@@ -156,8 +209,14 @@ public class Test {
         //Extract huffman table
         List<WordCodePair> huffmanTable = constructHuffmanTable(root);
         FileOutputStream fos = storeHuffmanTable(huffmanTable);
-        List<WordCodePair> outcome = loadHuffmanTable("/home/mohamed/CSED_25/Year_3/Algo/Huffman Compression/20011502.1.input.txt.hc");
+        List<WordCodePair> outcome = loadHuffmanTable("/home/mohamed/CSED_25/Year_3/Algo/Huffman Compression/20011502.2.input.txt.hc");
+
+        // test binary search
+        String code = binarySearch(outcome, new ByteArrayWrapper(new byte[]{105, 111}));
+        System.out.println(code);
+
     }
+
 }
 //    private Map<byte[], Long> constructFrequencyMap() throws IOException {
 //        Map<byte[], Long> frequencyTable = new HashMap<>();
@@ -176,3 +235,24 @@ public class Test {
 //        PriorityQueue<Node> queue = new PriorityQueue<>((o1, o2) -> {
 //            return Long.compare(o1.getFrequency(), o2.getFrequency());
 //        });
+
+
+
+
+//    private Map<ByteArrayWrapper, Long> constructFrequencyMap() throws IOException {
+//        // Create input stream
+//        BufferedInputStream bufferedInputStream = createInputStream();
+//        Map<ByteArrayWrapper, Long> frequencyTable = new HashMap<>();
+//        //read byte[numberOfBytesPerWord] from input
+//        byte[] buffer = new byte[numberOfBytesPerWord];
+//        int bytesRead = 0;
+//        while ((bytesRead = bufferedInputStream.read(buffer)) != -1) {
+//            //put byte[] in frequency table ------------------------------- numberOfBytesPerWord instead of bytesRead in case of errors
+//            byte[] currentBuffer = Arrays.copyOf(buffer, bytesRead); // To enforce mutability of map keys
+//            frequencyTable.put(new ByteArrayWrapper(currentBuffer),
+//                    frequencyTable.getOrDefault(new ByteArrayWrapper(currentBuffer), 0L) + 1L);
+//        }
+//        bufferedInputStream.close();
+//        //return frequency table
+//        return frequencyTable;
+//    }
