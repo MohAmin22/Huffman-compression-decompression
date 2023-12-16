@@ -7,7 +7,7 @@ The same can be done assuming the basic unit is n bytes, where n is an integer.
 ## How to Run
 
 In case of compression
-```java
+```ruby
 java -jar huffman_20011502.jar c absolute_path_to_input_file n 
 ```
 where n : the number of bytes per word
