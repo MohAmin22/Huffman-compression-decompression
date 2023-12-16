@@ -1,0 +1,7 @@
+To calculate the frequency of specific bit stringin file:
+
+ xxd -b Course\ Information.pdf | grep -o '11011101' | wc -l
+
+To view binary content of a file:
+
+xxd -b Course\ Information.pdf 
