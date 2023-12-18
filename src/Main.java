@@ -4,13 +4,6 @@ public class Main {
         String inputPath = args[1];
         int numberOfBytesPerWord = args.length == 3 ? Integer.parseInt(args[2]) : 0;
         System.out.println(mode + " " + inputPath + " " + numberOfBytesPerWord);
-//        try {
-//            new Test().storeNumberOfBitsWritten();
-//        } catch (Exception e) {
-//            System.out.println(e.getMessage());
-//        }
-
-
         try {
             if (mode.equalsIgnoreCase("c")) {
                 new Compression(numberOfBytesPerWord).compress(inputPath);
@@ -20,13 +13,5 @@ public class Main {
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
-
-        // TestBitInputStream
-//        try{
-//           new TestBitInputStream().readBitSequence();
-//        }catch (Exception e){
-//            System.out.println(e.getMessage());
-//        }
-
     }
 }

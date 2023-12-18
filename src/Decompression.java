@@ -1,54 +1,39 @@
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class Decompression {
     private String inputPath;
     private int numberOfBytesPerWord;
     private byte[] lastByteArray;
-    private long numberOfbitsWritten = 0;
 
 
     public void decompress(String inputPath) {
         try {
+            long startTime = System.currentTimeMillis();
             this.setInput(inputPath);
             this.deCompressFile();
+            long endTime = System.currentTimeMillis();
+            System.out.println("The deCompression is done in : " + (endTime - startTime) / 1000 + "  second(s)");
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
     }
 
-    private void setInput(String inputPath) throws Exception {
+    private void setInput(String inputPath) {
         this.inputPath = inputPath;
     }
 
-    private BitInputStreamInf createBitInputStream() throws IOException {
+    private IBitInputStream createBitInputStream() throws IOException {
         FileInputStream inputStream = new FileInputStream(inputPath);
         return new BitInputStream(inputStream);
     }
 
-    private void extractLastByteArray(BitInputStreamInf bitInputStream) throws IOException {
+    private void extractLastByteArray(IBitInputStream bitInputStream) throws IOException {
         bitInputStream.fetch();
         int lastByteArraySize = bitInputStream.readInt();
         lastByteArray = bitInputStream.readNBytes(lastByteArraySize);
     }
 
-//    private Node extractHuffmanTree(BitInputStreamInf bitInputStream) throws IOException {
-//        // TODO : handle status value
-//        if (bitInputStream.fetch() != -1) {
-//            boolean isInternal = bitInputStream.readBit();
-//            if (!isInternal) {
-//                return new Node(bitInputStream.readNBytes(numberOfBytesPerWord), 0L, null, null);
-//            } else {
-//                Node left = extractHuffmanTree(bitInputStream);
-//                Node right = extractHuffmanTree(bitInputStream);
-//                return new Node(null, 0L, left, right);
-//            }
-//        }
-//    }
-
-    private Node extractHuffmanTree(BitInputStreamInf bitInputStream) throws IOException {
+    private Node extractHuffmanTree(IBitInputStream bitInputStream) throws IOException {
         // TODO : handle status value
         bitInputStream.fetch();
         boolean isInternal = bitInputStream.readBit();
@@ -76,7 +61,7 @@ public class Decompression {
         return new BitOutputStream(fos);
     }
 
-    private void decode(BitInputStreamInf bitInputStream, Node root, Node currentNode) throws IOException {
+    private void decode(IBitInputStream bitInputStream, Node root, Node currentNode) throws IOException {
         BitOutputStream bitOutputStream = createBitOutputStream();
         while (bitInputStream.fetch() != -1) {
             if (currentNode.isLeaf()) {
@@ -90,7 +75,7 @@ public class Decompression {
                     currentNode = currentNode.getLeft();
                 }
             }
-            if(root.isLeaf()) break;// To ensure not to have an Infinite loop if the tree has one node
+            if (root.isLeaf()) break;// To ensure not to have an Infinite loop if the tree has one node
         }
         // Store the Last byte[] before closing the stream
         storeLastByteArray(bitOutputStream);
@@ -98,34 +83,25 @@ public class Decompression {
         bitOutputStream.close();
     }
 
-    //
-    void readBitSequence(BitInputStreamInf bitInputStream) throws IOException {
-        while (bitInputStream.fetch() != -1) {
-            for (int i = 0; i < 8; i++) {
-                System.out.print((bitInputStream.readBit() ? '1' : '0'));
-            }
-            System.out.println();
-        }
-    }
-
-    private void extractNumberOfBytesPerWord(BitInputStreamInf bitInputStream) throws IOException {
+    private void extractNumberOfBytesPerWord(IBitInputStream bitInputStream) throws IOException {
         bitInputStream.fetch();
         numberOfBytesPerWord = bitInputStream.readInt();
     }
 
-    private void extractNumberOfBitsWritten(BitInputStreamInf bitInputStream) throws IOException {
+    private void extractNumberOfBitsWritten(IBitInputStream bitInputStream) throws IOException {
         bitInputStream.fetch();
-        numberOfbitsWritten = bitInputStream.readLong();
-        bitInputStream.setGetNumberOfBitsWrittenInCompressedFile(numberOfbitsWritten);
+        long numberOfBitsWritten = bitInputStream.readLong();
+        bitInputStream.setGetNumberOfBitsWrittenInCompressedFile(numberOfBitsWritten);
     }
-    private void storeLastByteArray(BitOutputStream bitOutputStream) throws IOException {
+
+    private void storeLastByteArray(BitOutputStream bitOutputStream) {
         if (lastByteArray != null) {
             bitOutputStream.writeByteArray(lastByteArray);
         }
     }
 
     private void deCompressFile() throws IOException {
-        BitInputStreamInf bitInputStream = createBitInputStream();
+        IBitInputStream bitInputStream = createBitInputStream();
         // Extract number of bits written
         extractNumberOfBitsWritten(bitInputStream);
         // Extract number of bytes per word

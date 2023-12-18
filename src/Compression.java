@@ -1,17 +1,11 @@
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 public class Compression {
     private String inputPath;
     private final int numberOfBytesPerWord;
-    private long numberOfbitsWritten = -1;
-
-    private long fileSizeInBytes;
+    private long numberOfBitsWritten = -1;
     private byte[] lastByteArray;
-    //
     private final int MAX_CAPACITY; // Size of input buffer
 
     public Compression(int numberOfBytesPerWord) {
@@ -21,19 +15,18 @@ public class Compression {
 
     public void compress(String inputPath) {
         try {
+            long startTime = System.currentTimeMillis();
             this.setInput(inputPath);
             this.compressFile();
+            long endTime = System.currentTimeMillis();
+            System.out.println("The Compression is done in : " + (endTime - startTime) / 1000 + "  second(s)");
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
     }
 
-    // Don't forget to close streams
-    private void setInput(String inputPath) throws Exception {
+    private void setInput(String inputPath) {
         this.inputPath = inputPath;
-
-        Path path = Paths.get(inputPath);
-        this.fileSizeInBytes = Files.size(path);
     }
 
     private BufferedInputStream createInputStream() throws FileNotFoundException {
@@ -63,7 +56,6 @@ public class Compression {
             }
         }
         bufferedInputStream.close();
-        //return frequency table
         return frequencyTable;
     }
 
@@ -109,7 +101,7 @@ public class Compression {
         }
     }
 
-    private void storeLastByteArray(BitOutputStream bitOutputStream) throws IOException {
+    private void storeLastByteArray(BitOutputStream bitOutputStream) {
         if (this.lastByteArray != null) {
             bitOutputStream.writeInt(this.lastByteArray.length);
             bitOutputStream.writeByteArray(this.lastByteArray);
@@ -130,14 +122,10 @@ public class Compression {
         return new BitOutputStream(fos);
     }
 
-    String seqTest = "";
-
-    private void storeHuffmanTree(Node root, BitOutputStream bitOutputStream) throws IOException {
+    private void storeHuffmanTree(Node root, BitOutputStream bitOutputStream) {
         if (root.isLeaf()) {
             bitOutputStream.writeBit(false);
             bitOutputStream.writeByteArray(root.getWord());
-            //
-            seqTest += "0";
             for (byte b : root.getWord()) {
                 String binaryString = "";
                 for (int i = 7; i >= 0; i--) { // Iterate from MSB to LSB
@@ -148,14 +136,10 @@ public class Compression {
                         binaryString += "0";
                     }
                 }
-                seqTest += binaryString;
             }
-            //
         } else if (root.hasLeftChild() && root.hasRightChild()) {
             bitOutputStream.writeBit(true);
-            //
-            seqTest += "1";
-            //
+
             storeHuffmanTree(root.getLeft(), bitOutputStream);
             storeHuffmanTree(root.getRight(), bitOutputStream);
         } else {
@@ -164,7 +148,7 @@ public class Compression {
         }
     }
 
-    private void storeNumberOfBytesPerWord(BitOutputStream bitOutputStream) throws IOException {
+    private void storeNumberOfBytesPerWord(BitOutputStream bitOutputStream) {
         bitOutputStream.writeInt(this.numberOfBytesPerWord);
     }
 
@@ -174,8 +158,6 @@ public class Compression {
             //read byte[numberOfBytesPerWord] from input
             byte[] buffer = new byte[numberOfBytesPerWord];
             int bytesRead;
-            // Set bitOutputStream for bit manipulation
-            //BitOutputStream bos = new BitOutputStream(fos);
             while ((bytesRead = bufferedInputStream.read(buffer)) != -1) { // bytesRead in the last byte group may be n or less
                 if (bytesRead < numberOfBytesPerWord) break; // Last byte[] was saved in the file
                 // Find the code of the current word
@@ -192,7 +174,7 @@ public class Compression {
                 }
             }
             bitOutputStream.endWriting();
-            numberOfbitsWritten = bitOutputStream.getNumberOfbitsWritten();
+            numberOfBitsWritten = bitOutputStream.getNumberOfBitsWritten();
         } catch (IOException e) {
             System.out.println(e.getMessage());
         } finally {
@@ -206,27 +188,28 @@ public class Compression {
         if (root.getLeft() == null && root.getRight() == null) return 1;
         return 1 + huffmanTreeSize(root.getLeft()) + huffmanTreeSize(root.getRight());
     }
+
     private void storeNumberOfBitsWritten() throws IOException {
         String outputPath = getOutputPath();
         RandomAccessFile raf = new RandomAccessFile(outputPath, "rw");
         raf.seek(0);
-        raf.writeLong(numberOfbitsWritten);
+        raf.writeLong(numberOfBitsWritten);
         raf.close();
     }
 
     private void compressFile() throws IOException {
         // Collect statistics
         Map<ByteArrayWrapper, Long> frequencyTable = constructFrequencyMap();
-        if(frequencyTable.isEmpty()) System.exit(22);
+        if (frequencyTable.isEmpty()) System.exit(22);
         System.out.println("Table size: " + frequencyTable.size());
         // Construct huffman tree
         PriorityQueue<Node> queue = convertFrequencyTableMapToPriorityQueue(frequencyTable);
         Node root = constructHuffmanTree(queue);
-        System.out.println("Huffman Tree size : " + huffmanTreeSize(root));
+        //System.out.println("Huffman Tree size : " + huffmanTreeSize(root));
         // Write huffman tree to file
         BitOutputStream bitOutputStream = createBitOutputStream();
         // Preserve a place for number of bits written
-        bitOutputStream.writeLong(numberOfbitsWritten);
+        bitOutputStream.writeLong(numberOfBitsWritten);
         // Store number of bytes per word (n)
         storeNumberOfBytesPerWord(bitOutputStream);
         // Store last byte[] information
