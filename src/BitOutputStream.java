@@ -1,11 +1,15 @@
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BitOutputStream {
     private BufferedOutputStream bitOutputStream;
     private byte buffer = 0;
     private int operationCounter = 0;
+
+    private List<Byte> outputList = new ArrayList<Byte>();
     public BitOutputStream(FileOutputStream fos) {
         this.bitOutputStream = new BufferedOutputStream(fos);
     }
@@ -15,12 +19,7 @@ public class BitOutputStream {
         }
         operationCounter++;
         if(operationCounter == 8) {
-            try {
-                byte[] buffer = new byte[]{this.buffer};
-                bitOutputStream.write(buffer);
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-            }
+            outputList.add(this.buffer);
             buffer = 0;
             operationCounter = 0;
         }
@@ -33,9 +32,11 @@ public class BitOutputStream {
         try {
             if(operationCounter != 0) { // buffer != 0 : condition may cause problems if the last byte is supposed to be zero
                 this.buffer = (byte) (buffer << (8 - operationCounter));
-                byte[] buffer = new byte[]{this.buffer};
-                bitOutputStream.write(buffer);
+                //byte[] buffer = new byte[]{this.buffer};
+                //bitOutputStream.write(buffer);
+                outputList.add(this.buffer);
             }
+            save();
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
@@ -45,5 +46,12 @@ public class BitOutputStream {
     }
     void flush() throws IOException {
         this.bitOutputStream.flush();
+    }
+    private void save() throws IOException {
+        byte [] saveBuffer = new byte[this.outputList.size()];
+        for (int i = 0; i < saveBuffer.length; i++) {
+            saveBuffer[i] = this.outputList.get(i);
+        }
+        bitOutputStream.write(saveBuffer);
     }
 }
