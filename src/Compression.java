@@ -128,24 +128,40 @@ public class Compression {
         return new BitOutputStream(fos);
     }
 
+//    private void storeHuffmanTree(Node root, BitOutputStream bitOutputStream) throws IOException {
+//        if (root.isLeaf()) {
+//            bitOutputStream.writeBit(false); // left indicator
+//            bitOutputStream.writeBit(false); // right indicator
+//            bitOutputStream.writeByteArray(root.getWord());
+//        } else if (root.hasLeftChild() && root.hasRightChild()) {
+//            bitOutputStream.writeBit(true);
+//            bitOutputStream.writeBit(true);
+//            storeHuffmanTree(root.getLeft(), bitOutputStream);
+//            storeHuffmanTree(root.getRight(), bitOutputStream);
+//        } else if (root.hasLeftChild() && !root.hasRightChild()) {
+//            bitOutputStream.writeBit(true);
+//            bitOutputStream.writeBit(false);
+//            storeHuffmanTree(root.getLeft(), bitOutputStream);
+//        } else if (!root.hasLeftChild() && root.hasRightChild()) {
+//            bitOutputStream.writeBit(false);
+//            bitOutputStream.writeBit(true);
+//            storeHuffmanTree(root.getRight(), bitOutputStream);
+//        }
+//    }
+
+
+
     private void storeHuffmanTree(Node root, BitOutputStream bitOutputStream) throws IOException {
         if (root.isLeaf()) {
-            bitOutputStream.writeBit(false); // left indicator
-            bitOutputStream.writeBit(false); // right indicator
+            bitOutputStream.writeBit(false);
             bitOutputStream.writeByteArray(root.getWord());
         } else if (root.hasLeftChild() && root.hasRightChild()) {
             bitOutputStream.writeBit(true);
-            bitOutputStream.writeBit(true);
             storeHuffmanTree(root.getLeft(), bitOutputStream);
             storeHuffmanTree(root.getRight(), bitOutputStream);
-        } else if (root.hasLeftChild() && !root.hasRightChild()) {
-            bitOutputStream.writeBit(true);
-            bitOutputStream.writeBit(false);
-            storeHuffmanTree(root.getLeft(), bitOutputStream);
-        } else if (!root.hasLeftChild() && root.hasRightChild()) {
-            bitOutputStream.writeBit(false);
-            bitOutputStream.writeBit(true);
-            storeHuffmanTree(root.getRight(), bitOutputStream);
+        }else {
+            System.out.println("Invalid huffman tree to save");
+            System.exit(100);
         }
     }
     private void storeNumberOfBytesPerWord(BitOutputStream bitOutputStream) throws IOException {
