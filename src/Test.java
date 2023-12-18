@@ -224,7 +224,12 @@ public class Test {
         buff.putInt(a);
         System.out.println(b[3]);
     }
-
+    public void storeNumberOfBitsWritten() throws IOException {
+        String outputPath = "/home/mohamed/CSED_25/Year_3/Algo/Huffman Compression/try_saving_long.txt";
+        RandomAccessFile raf = new RandomAccessFile(outputPath, "rw");
+        raf.seek(0);
+        raf.writeLong(-1L);
+    }
 }
 //    private Map<byte[], Long> constructFrequencyMap() throws IOException {
 //        Map<byte[], Long> frequencyTable = new HashMap<>();
@@ -263,4 +268,20 @@ public class Test {
 //        bufferedInputStream.close();
 //        //return frequency table
 //        return frequencyTable;
+//    }
+
+
+
+//    public int readInt() {
+//        int b1 = readByte();
+//        int b2 = readByte();
+//        int b3 = readByte();
+//        int b4 = readByte();
+//        return (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+//    }
+//    @Override
+//    public long readLong() {
+//        long a = ((long)readInt()) << 32L;
+//        long b = readInt();
+//        return a | b;
 //    }

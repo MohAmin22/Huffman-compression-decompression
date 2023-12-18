@@ -5,7 +5,7 @@ public class Main {
         int numberOfBytesPerWord = args.length == 3 ? Integer.parseInt(args[2]) : 0;
         System.out.println(mode + " " + inputPath + " " + numberOfBytesPerWord);
 //        try {
-//            new Test().testIntegerToByteArray();
+//            new Test().storeNumberOfBitsWritten();
 //        } catch (Exception e) {
 //            System.out.println(e.getMessage());
 //        }

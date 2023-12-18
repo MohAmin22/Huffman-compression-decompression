@@ -9,7 +9,7 @@ public class BitOutputStream {
     private BufferedOutputStream outputStream;
     private byte buffer = 0;
     private int operationCounter = 0;
-
+    private long numberOfbitsWritten = 0;
     private List<Byte> outputList = new ArrayList<Byte>();
     public BitOutputStream(FileOutputStream fos) {
         this.outputStream = new BufferedOutputStream(fos);
@@ -31,6 +31,7 @@ public class BitOutputStream {
     */
     void endWriting(){
         try {
+            numberOfbitsWritten = outputList.size() * 8L + operationCounter;
             if(operationCounter != 0) { // buffer != 0 : condition may cause problems if the last byte is supposed to be zero
                 outputList.add(this.buffer);
             }
@@ -73,5 +74,14 @@ public class BitOutputStream {
         ByteBuffer buff = ByteBuffer.wrap(byteArrayOfInteger);
         buff.putInt(length);
         writeByteArray(byteArrayOfInteger);
+    }
+    public void writeLong(long length) throws IOException {
+        byte[] byteArrayOfInteger = new byte[8];
+        ByteBuffer buff = ByteBuffer.wrap(byteArrayOfInteger);
+        buff.putLong(length);
+        writeByteArray(byteArrayOfInteger);
+    }
+    public long getNumberOfbitsWritten() {
+        return numberOfbitsWritten;
     }
 }

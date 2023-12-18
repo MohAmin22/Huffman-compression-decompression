@@ -12,7 +12,7 @@ public class TestBitInputStream {
         System.out.println( "Number of bytes per word: " + bitInputStream.readInt());
         System.out.println("size of byte array: " + bitInputStream.readInt());
     }
-    void readBitSequence() throws IOException {
+    void readBitSequence(BitInputStream bitInputStream) throws IOException {
         while(bitInputStream.fetch() != -1) {
             for (int i = 0; i < 8; i++) {
                 System.out.print((bitInputStream.readBit()?'1' : '0'));
