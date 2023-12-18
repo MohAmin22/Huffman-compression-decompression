@@ -1,4 +1,5 @@
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -215,6 +216,13 @@ public class Test {
         String code = binarySearch(outcome, new ByteArrayWrapper(new byte[]{105, 111}));
         System.out.println(code);
 
+    }
+    public void testIntegerToByteArray(){
+        int a = 1000;//101
+        byte[] b = new byte[4];
+        ByteBuffer  buff = ByteBuffer.wrap(b);
+        buff.putInt(a);
+        System.out.println(b[3]);
     }
 
 }

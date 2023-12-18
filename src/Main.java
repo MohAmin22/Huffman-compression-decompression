@@ -3,9 +3,9 @@ public class Main {
         String mode = args[0];
         String inputPath = args[1];
         int numberOfBytesPerWord = args.length == 3 ? Integer.parseInt(args[2]) : 0;
-//        System.out.println(mode + " " + inputPath + " " + numberOfBytesPerWord);
+        System.out.println(mode + " " + inputPath + " " + numberOfBytesPerWord);
 //        try {
-//            new Test().testPrimative();
+//            new Test().testIntegerToByteArray();
 //        } catch (Exception e) {
 //            System.out.println(e.getMessage());
 //        }
