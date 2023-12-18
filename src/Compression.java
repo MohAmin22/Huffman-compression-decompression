@@ -119,7 +119,7 @@ public class Compression {
     private String getOutputPath() {
         String inputFileName = this.inputPath.substring(this.inputPath.lastIndexOf(File.separatorChar) + 1);
         String outputFileName = "20011502" + "." + this.numberOfBytesPerWord + "." + inputFileName + "." + "hc";
-        return this.inputPath.substring(0, this.inputPath.lastIndexOf('/') + 1) + outputFileName;
+        return this.inputPath.substring(0, this.inputPath.lastIndexOf(File.separatorChar) + 1) + outputFileName;
     }
 
     private BitOutputStream createBitOutputStream() throws FileNotFoundException {
@@ -127,30 +127,6 @@ public class Compression {
         FileOutputStream fos = new FileOutputStream(outputPath);
         return new BitOutputStream(fos);
     }
-
-//    private void storeHuffmanTree(Node root, BitOutputStream bitOutputStream) throws IOException {
-//        if (root.isLeaf()) {
-//            bitOutputStream.writeBit(false); // left indicator
-//            bitOutputStream.writeBit(false); // right indicator
-//            bitOutputStream.writeByteArray(root.getWord());
-//        } else if (root.hasLeftChild() && root.hasRightChild()) {
-//            bitOutputStream.writeBit(true);
-//            bitOutputStream.writeBit(true);
-//            storeHuffmanTree(root.getLeft(), bitOutputStream);
-//            storeHuffmanTree(root.getRight(), bitOutputStream);
-//        } else if (root.hasLeftChild() && !root.hasRightChild()) {
-//            bitOutputStream.writeBit(true);
-//            bitOutputStream.writeBit(false);
-//            storeHuffmanTree(root.getLeft(), bitOutputStream);
-//        } else if (!root.hasLeftChild() && root.hasRightChild()) {
-//            bitOutputStream.writeBit(false);
-//            bitOutputStream.writeBit(true);
-//            storeHuffmanTree(root.getRight(), bitOutputStream);
-//        }
-//    }
-
-
-
     private void storeHuffmanTree(Node root, BitOutputStream bitOutputStream) throws IOException {
         if (root.isLeaf()) {
             bitOutputStream.writeBit(false);

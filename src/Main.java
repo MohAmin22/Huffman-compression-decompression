@@ -9,6 +9,8 @@ public class Main {
 //        } catch (Exception e) {
 //            System.out.println(e.getMessage());
 //        }
+
+
         try {
             if (mode.equalsIgnoreCase("c")) {
                 new Compression(numberOfBytesPerWord).compress(inputPath);
@@ -18,6 +20,13 @@ public class Main {
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
+
+        // TestBitInputStream
+//        try{
+//           new TestBitInputStream().readBitSequence();
+//        }catch (Exception e){
+//            System.out.println(e.getMessage());
+//        }
 
     }
 }

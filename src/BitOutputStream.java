@@ -6,13 +6,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BitOutputStream {
-    private BufferedOutputStream bitOutputStream;
+    private BufferedOutputStream outputStream;
     private byte buffer = 0;
     private int operationCounter = 0;
 
     private List<Byte> outputList = new ArrayList<Byte>();
     public BitOutputStream(FileOutputStream fos) {
-        this.bitOutputStream = new BufferedOutputStream(fos);
+        this.outputStream = new BufferedOutputStream(fos);
     }
     void writeBit(boolean bit) {
         if(bit) {
@@ -36,24 +36,24 @@ public class BitOutputStream {
             }
             // Save to the file
             save();
-            // Flush the bitOutputStream to ensure all buffered data is sent to the OS to write into the file
+            // Flush the outputStream to ensure all buffered data is sent to the OS to write into the file
             flush();
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
     }
     void close() throws IOException {
-        this.bitOutputStream.close();
+        this.outputStream.close();
     }
     private void flush() throws IOException {
-        this.bitOutputStream.flush();
+        this.outputStream.flush();
     }
     private void save() throws IOException {
         byte [] saveBuffer = new byte[this.outputList.size()];
         for (int i = 0; i < saveBuffer.length; i++) {
             saveBuffer[i] = this.outputList.get(i);
         }
-        bitOutputStream.write(saveBuffer);
+        outputStream.write(saveBuffer);
     }
     public void writeByteArray(byte[] word) throws IOException {
         for (byte b : word) {
