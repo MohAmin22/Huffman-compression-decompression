@@ -31,10 +31,9 @@ public class BitInputStream implements BitInputStreamInf {
     }
 
     @Override
-    public boolean readBit() {
+    public boolean readBit() throws IOException {
+        fetch();
         numberOfBitsRead ++;
-        if(currentBytePtr >= 50000)
-            System.out.println("hiiiiiiiiiii");
         byte currentByte = buffer[currentBytePtr];
         boolean bit = (currentByte & (1 << (7 - operationCounter))) != 0;
         operationCounter++;
@@ -46,7 +45,7 @@ public class BitInputStream implements BitInputStreamInf {
     }
 
     @Override
-    public byte readByte() {
+    public byte readByte() throws IOException {
         byte b = 0;
         for (int i = 7; i >= 0; i--) {
             b |= (byte) ((readBit() ? 1 : 0) << i);
@@ -55,7 +54,7 @@ public class BitInputStream implements BitInputStreamInf {
     }
 
     @Override
-    public byte[] readNBytes(int n) {
+    public byte[] readNBytes(int n) throws IOException {
         if (n <= 0) return null;
         byte[] arr = new byte[n];
         for (int i = 0; i < n; i++) {
@@ -65,7 +64,7 @@ public class BitInputStream implements BitInputStreamInf {
     }
 
     @Override
-    public int readInt() {
+    public int readInt() throws IOException {
         byte[] Int = readNBytes(4);
         int a = 0;
         for (int i = 3; i >= 0; i--) {
@@ -74,7 +73,7 @@ public class BitInputStream implements BitInputStreamInf {
         return a;
     }
     @Override
-    public long readLong() {
+    public long readLong() throws IOException {
         long a = (long)readInt() << 32L;
         long b = readInt();
         return a | b;

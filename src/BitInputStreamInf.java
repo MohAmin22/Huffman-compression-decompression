@@ -1,15 +1,15 @@
 import java.io.IOException;
 
 public interface BitInputStreamInf {
-    public boolean readBit();
+    public boolean readBit() throws IOException;
 
-    public byte readByte();
+    public byte readByte() throws IOException;
 
-    public int readInt();
+    public int readInt() throws IOException;
 
-    public long readLong();
+    public long readLong() throws IOException;
 
-    public byte[] readNBytes(int n);
+    public byte[] readNBytes(int n) throws IOException;
 
     public int fetch() throws IOException;
 

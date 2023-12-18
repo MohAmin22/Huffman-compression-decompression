@@ -90,7 +90,10 @@ public class Decompression {
                     currentNode = currentNode.getLeft();
                 }
             }
+            if(root.isLeaf()) break;// To ensure not to have an Infinite loop if the tree has one node
         }
+        // Store the Last byte[] before closing the stream
+        storeLastByteArray(bitOutputStream);
         bitOutputStream.endWriting();
         bitOutputStream.close();
     }
@@ -115,6 +118,11 @@ public class Decompression {
         numberOfbitsWritten = bitInputStream.readLong();
         bitInputStream.setGetNumberOfBitsWrittenInCompressedFile(numberOfbitsWritten);
     }
+    private void storeLastByteArray(BitOutputStream bitOutputStream) throws IOException {
+        if (lastByteArray != null) {
+            bitOutputStream.writeByteArray(lastByteArray);
+        }
+    }
 
     private void deCompressFile() throws IOException {
         BitInputStreamInf bitInputStream = createBitInputStream();
@@ -126,12 +134,7 @@ public class Decompression {
         extractLastByteArray(bitInputStream);
         // Extract huffman tree
         Node root = extractHuffmanTree(bitInputStream);
-
-        //readBitSequence(bitInputStream);
-
         // Decompress and Decode the compressed file
         decode(bitInputStream, root, root);
     }
-
-
 }

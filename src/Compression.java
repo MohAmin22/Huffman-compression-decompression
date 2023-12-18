@@ -217,6 +217,7 @@ public class Compression {
     private void compressFile() throws IOException {
         // Collect statistics
         Map<ByteArrayWrapper, Long> frequencyTable = constructFrequencyMap();
+        if(frequencyTable.isEmpty()) System.exit(22);
         System.out.println("Table size: " + frequencyTable.size());
         // Construct huffman tree
         PriorityQueue<Node> queue = convertFrequencyTableMapToPriorityQueue(frequencyTable);
@@ -232,24 +233,6 @@ public class Compression {
         storeLastByteArray(bitOutputStream);
         // Store huffman tree in the file
         storeHuffmanTree(root, bitOutputStream);
-//        //Test
-//        System.out.println("Test: ");
-//        int c = 0;
-//        for (char a : seqTest.toCharArray()) {
-//            System.out.print(a);
-//            c++;
-//            if (c == 8) {
-//                c = 0;
-//                System.out.println();
-//            }
-//
-//        }
-
-//        // to del when enable encodeAndCompress(bitOutputStream, huffmanTable);
-//        bitOutputStream.endWriting();
-//        bitOutputStream.close();
-//        //
-
         // Extract huffman table ( word -> code )
         Map<ByteArrayWrapper, String> huffmanTable = constructHuffmanTable(root);
         // Encode and compress the file
