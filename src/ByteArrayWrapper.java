@@ -1,6 +1,7 @@
+import java.io.Serializable;
 import java.util.Arrays;
 
-public class ByteArrayWrapper {
+public class ByteArrayWrapper implements Serializable {
 
     private final byte[] buffer;
 

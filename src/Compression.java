@@ -1,33 +1,35 @@
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
-import java.io.OutputStream;
 
 public class Compression {
     private String inputPath;
-    private int numberOfBytesPerWord;
-    private long fileSizeInBytes;
+    private final int numberOfBytesPerWord;
+    private long numberOfBitsWritten = -1;
     private byte[] lastByteArray;
+    private final int MAX_CAPACITY; // Size of input buffer
 
-    public void compress(String inputPath, int numberOfBytesPerWord) {
+    public Compression(int numberOfBytesPerWord) {
+        this.numberOfBytesPerWord = numberOfBytesPerWord;
+        this.MAX_CAPACITY = numberOfBytesPerWord * 5000000; // MAX_CAPACITY has to be multiplier of numberOfBytesPerWord
+    }
+
+    public void compress(String inputPath) {
         try {
-            this.setInput(inputPath, numberOfBytesPerWord);
+            long startTime = System.currentTimeMillis();
+            this.setInput(inputPath);
             this.compressFile();
+            long endTime = System.currentTimeMillis();
+            System.out.println(Utility.getYELLOW() +
+                    "The Compression is done in : " + (endTime - startTime) / 1000 + "  second(s)"
+                    + Utility.getRESET()
+            );
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
     }
 
-    // Don't forget to close streams
-    private void setInput(String inputPath, int numberOfBytesPerWord) throws Exception {
+    private void setInput(String inputPath) {
         this.inputPath = inputPath;
-
-        this.numberOfBytesPerWord = numberOfBytesPerWord;
-
-        Path path = Paths.get(inputPath);
-        this.fileSizeInBytes = Files.size(path);
     }
 
     private BufferedInputStream createInputStream() throws FileNotFoundException {
@@ -40,20 +42,23 @@ public class Compression {
         BufferedInputStream bufferedInputStream = createInputStream();
         Map<ByteArrayWrapper, Long> frequencyTable = new HashMap<>();
         //read byte[numberOfBytesPerWord] from input
-        byte[] buffer = new byte[numberOfBytesPerWord];
+        byte[] buffer = new byte[MAX_CAPACITY];
+        //byte[] buffer = new byte[numberOfBytesPerWord];
         int bytesRead;
         while ((bytesRead = bufferedInputStream.read(buffer)) != -1) {
-            //put byte[] in frequency table ------------------------------- numberOfBytesPerWord instead of bytesRead in case of errors
-            if (bytesRead < numberOfBytesPerWord) {
-                this.lastByteArray = Arrays.copyOf(buffer, bytesRead);
-                break;
+            int start = 0, end = numberOfBytesPerWord - 1;
+            while (end < bytesRead) {
+                byte[] currentBuffer = Arrays.copyOfRange(buffer, start, end + 1); // To enforce mutability of map keys
+                frequencyTable.put(new ByteArrayWrapper(currentBuffer),
+                        frequencyTable.getOrDefault(new ByteArrayWrapper(currentBuffer), 0L) + 1L);
+                start = end + 1;
+                end += numberOfBytesPerWord;
             }
-            byte[] currentBuffer = Arrays.copyOf(buffer, bytesRead); // To enforce mutability of map keys
-            frequencyTable.put(new ByteArrayWrapper(currentBuffer),
-                    frequencyTable.getOrDefault(new ByteArrayWrapper(currentBuffer), 0L) + 1L);
+            if (end < MAX_CAPACITY) {
+                this.lastByteArray = Arrays.copyOfRange(buffer, start, bytesRead); // lastIndexOfInCompleteWord = bytesRead - 1;
+            }
         }
         bufferedInputStream.close();
-        //return frequency table
         return frequencyTable;
     }
 
@@ -65,42 +70,31 @@ public class Compression {
         return queue;
     }
 
-    public PriorityQueue<Node> deepCopy(PriorityQueue<Node> queue) {
-        PriorityQueue<Node> queueCopy = new PriorityQueue<>(Comparator.comparingLong(Node::getFrequency));
-        for (Node node : queue) {
-            queueCopy.add(new Node(node.getWord(), node.getFrequency(), node.getLeft(), node.getRight()));
-        }
-        return queueCopy;
-    }
-
     // input : queue of word-frequency pairs
-    private Node constructHuffmanTree(final PriorityQueue<Node> queue) {
-        // to enforce mutability performs a deep copy of the queue
-        PriorityQueue<Node> queueCopy = deepCopy(queue);
-
-        while (queueCopy.size() > 1) {
-            Node left = queueCopy.poll();
-            Node right = queueCopy.poll();
+    private Node constructHuffmanTree(PriorityQueue<Node> queue) {
+        while (queue.size() > 1) {
+            Node left = queue.poll();
+            Node right = queue.poll();
             assert right != null; // Throws an Exception when the file is so small that fits in 1 or less byte[n]
             Node parent = new Node(null, left.getFrequency() + right.getFrequency(), left, right);
-            queueCopy.add(parent);
+            queue.add(parent);
         }
-        return queueCopy.poll();
+        return queue.poll();
     }
 
     /*
      *  input : root of huffman tree
      *  output : huffman table in ArrayList form
      */
-    private List<WordCodePair> constructHuffmanTable(Node root) {
-        List<WordCodePair> huffmanTable = new ArrayList<>();
+    private Map<ByteArrayWrapper, String> constructHuffmanTable(Node root) {
+        Map<ByteArrayWrapper, String> huffmanTable = new HashMap<>();
         buildHuffmanTable(huffmanTable, "", root);
         return huffmanTable;
     }
 
-    private void buildHuffmanTable(List<WordCodePair> huffmanTable, String code, Node node) {
+    private void buildHuffmanTable(Map<ByteArrayWrapper, String> huffmanTable, String code, Node node) {
         if (node.getLeft() == null && node.getRight() == null) {
-            huffmanTable.add(new WordCodePair(node.getWord(), code));
+            huffmanTable.put(new ByteArrayWrapper(node.getWord()), code);
         }
         if (node.getLeft() != null) {
             buildHuffmanTable(huffmanTable, code + "0", node.getLeft());
@@ -110,94 +104,138 @@ public class Compression {
         }
     }
 
-    // Don't forget to close streams
-    private FileOutputStream storeHuffmanTable(List<WordCodePair> huffmanTable) throws IOException {
-        // Generate output file path
+    private void storeLastByteArray(BitOutputStream bitOutputStream) {
+        if (this.lastByteArray != null) {
+            bitOutputStream.writeInt(this.lastByteArray.length);
+            bitOutputStream.writeByteArray(this.lastByteArray);
+        } else {
+            bitOutputStream.writeInt(0);
+        }
+    }
+
+    private String getOutputPath() {
         String inputFileName = this.inputPath.substring(this.inputPath.lastIndexOf(File.separatorChar) + 1);
         String outputFileName = "20011502" + "." + this.numberOfBytesPerWord + "." + inputFileName + "." + "hc";
-        String outputPath = this.inputPath.substring(0, this.inputPath.lastIndexOf('/') + 1) + outputFileName;
-        // Save the arrayList in the output file
+        return this.inputPath.substring(0, this.inputPath.lastIndexOf(File.separatorChar) + 1) + outputFileName;
+    }
+
+    private BitOutputStream createBitOutputStream() throws FileNotFoundException {
+        String outputPath = getOutputPath();
         FileOutputStream fos = new FileOutputStream(outputPath);
-        ObjectOutputStream oos = new ObjectOutputStream(fos);
-        oos.writeObject(huffmanTable);
-        // Store last byte[] size then the array itself
-        if (this.lastByteArray != null) { // Aware of null pointer exception if the lastByteArray is never set in the frequency construction
-            oos.writeInt(this.lastByteArray.length);
-            oos.write(this.lastByteArray);
+        return new BitOutputStream(fos);
+    }
+
+    private void storeHuffmanTree(Node root, BitOutputStream bitOutputStream) {
+        if (root.isLeaf()) {
+            bitOutputStream.writeBit(false);
+            bitOutputStream.writeByteArray(root.getWord());
+        } else if (root.hasLeftChild() && root.hasRightChild()) {
+            bitOutputStream.writeBit(true);
+            storeHuffmanTree(root.getLeft(), bitOutputStream);
+            storeHuffmanTree(root.getRight(), bitOutputStream);
         } else {
-            oos.writeInt(0);
+            System.out.println("Invalid huffman tree to save");
+            System.exit(100);
         }
-        // Flush the ObjectOutputStream to ensure all buffered data is sent to the OS to write into the file
-        oos.flush();
-        return fos;
     }
 
-    private String binarySearch(List<WordCodePair> huffmanTable, ByteArrayWrapper word) {
-        huffmanTable.sort((o1, o2) -> Arrays.compare(o1.getWord(), o2.getWord()));
-        int wordCodeIndex = Collections.binarySearch(huffmanTable, new WordCodePair(word.getBuffer(), ""),
-                (o1, o2) -> Arrays.compare(o1.getWord(), o2.getWord()));
-        assert wordCodeIndex >= 0;
-        return huffmanTable.get(wordCodeIndex).getCode();
+    private void storeNumberOfBytesPerWord(BitOutputStream bitOutputStream) {
+        bitOutputStream.writeInt(this.numberOfBytesPerWord);
     }
 
-    private void encodeAndCompress(FileOutputStream fos, List<WordCodePair> huffmanTable) throws IOException {
+    private void encodeAndCompress(BitOutputStream bitOutputStream, Map<ByteArrayWrapper, String> huffmanTable) throws IOException {
         BufferedInputStream bufferedInputStream = createInputStream();
-        BitOutputStream bitOutputStream = new BitOutputStream(fos);
         try {
             //read byte[numberOfBytesPerWord] from input
             byte[] buffer = new byte[numberOfBytesPerWord];
             int bytesRead;
-            // Set bitOutputStream for bit manipulation
-            //BitOutputStream bos = new BitOutputStream(fos);
             while ((bytesRead = bufferedInputStream.read(buffer)) != -1) { // bytesRead in the last byte group may be n or less
-                if(bytesRead < numberOfBytesPerWord) break; // Last byte[] was saved in the file
+                if (bytesRead < numberOfBytesPerWord) break; // Last byte[] was saved in the file
                 // Find the code of the current word
-                String code = this.binarySearch(huffmanTable, new ByteArrayWrapper(buffer));
+                String code = huffmanTable.get(new ByteArrayWrapper(buffer));
                 // Write the code to the output file
                 for (char c : code.toCharArray()) {
-                    if(c == '0') {
+                    if (c == '0') {
                         bitOutputStream.writeBit(false);
-                    } else if(c == '1') {
+                    } else if (c == '1') {
                         bitOutputStream.writeBit(true);
-                    }else {
+                    } else {
                         throw new IllegalArgumentException();
                     }
                 }
             }
             bitOutputStream.endWriting();
-            // Flush the bitOutputStream to ensure all buffered data is sent to the OS to write into the file
-            bitOutputStream.flush();
+            numberOfBitsWritten = bitOutputStream.getNumberOfBitsWritten();
         } catch (IOException e) {
             System.out.println(e.getMessage());
-        }finally {
+        } finally {
             bufferedInputStream.close();
             bitOutputStream.close();
         }
     }
 
-    private void closeStreams(FileOutputStream fos) {
-        try {
-            fos.close();
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
+    private long huffmanTreeSize(Node root) {
+        if (root == null) return 0;
+        if (root.getLeft() == null && root.getRight() == null) return 1;
+        return 1 + huffmanTreeSize(root.getLeft()) + huffmanTreeSize(root.getRight());
+    }
+
+    private void storeNumberOfBitsWritten() throws IOException {
+        String outputPath = getOutputPath();
+        RandomAccessFile raf = new RandomAccessFile(outputPath, "rw");
+        raf.seek(0);
+        raf.writeLong(numberOfBitsWritten);
+        raf.close();
+    }
+    private void printCompressionRatio() {
+        File inputFile = new File(inputPath);
+        File outputFile = new File(getOutputPath());
+        String compressionRatio = String.format("%.3f",  ((double) inputFile.length()/ outputFile.length()));
+        System.out.println(Utility.getRED() +
+                "Compression ratio : " + compressionRatio
+                + Utility.getRESET()
+        );
     }
 
     private void compressFile() throws IOException {
         // Collect statistics
         Map<ByteArrayWrapper, Long> frequencyTable = constructFrequencyMap();
+        if (frequencyTable.isEmpty()) System.exit(22);
+
+        System.out.println(Utility.getCYAN()
+                + "Frequency map size: " + frequencyTable.size()
+                + Utility.getRESET()
+        );
+
         // Construct huffman tree
         PriorityQueue<Node> queue = convertFrequencyTableMapToPriorityQueue(frequencyTable);
         Node root = constructHuffmanTree(queue);
-        // Extract huffman table
-        List<WordCodePair> huffmanTable = constructHuffmanTable(root);
-        // Write huffman table to file
-        FileOutputStream fos = storeHuffmanTable(huffmanTable);
-        // Set bitOutputStream for bit manipulation
+
+        System.out.println(Utility.getGREEN()
+                + "Huffman Tree size : " + huffmanTreeSize(root)
+                + Utility.getRESET()
+        );
+
+        BitOutputStream bitOutputStream = createBitOutputStream();
+        // Preserve a place for number of bits written
+        bitOutputStream.writeLong(numberOfBitsWritten);
+        // Store number of bytes per word (n)
+        storeNumberOfBytesPerWord(bitOutputStream);
+        // Store last byte[] information
+        storeLastByteArray(bitOutputStream);
+        // Store huffman tree in the file
+        storeHuffmanTree(root, bitOutputStream);
+        // Extract huffman table ( word -> code )
+        Map<ByteArrayWrapper, String> huffmanTable = constructHuffmanTable(root);
         // Encode and compress the file
-        encodeAndCompress(fos, huffmanTable);
-        // Close the open streams
-        //closeStreams(fos);
+        encodeAndCompress(bitOutputStream, huffmanTable);
+        // Store the number of bits written in the beginning of the file
+        System.out.println(Utility.getBLUE()+
+                "Number of bits written: " + numberOfBitsWritten
+                + Utility.getRESET()
+        );
+        storeNumberOfBitsWritten();
+        printCompressionRatio();
     }
 
 

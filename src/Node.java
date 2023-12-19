@@ -50,6 +50,15 @@ public class Node {
     public void setRight(Node right) {
         this.right = right;
     }
+    public boolean isLeaf(){
+        return left == null && right == null;
+    }
+    public boolean hasLeftChild(){
+        return left != null;
+    }
+    public boolean hasRightChild(){
+        return right != null;
+    }
 
     @Override
     public boolean equals(Object obj) {

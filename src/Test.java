@@ -1,4 +1,5 @@
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -7,7 +8,7 @@ import java.util.*;
 public class Test {
     private final String inputPath = "/home/mohamed/CSED_25/Year_3/Algo/Huffman Compression/input.txt";
     private long fileSizeInBytes;
-    private final int numberOfBytesPerWord = 2;
+    private int numberOfBytesPerWord = 2;
 
     void testSeparator() {
         System.out.println(File.separatorChar);
@@ -216,43 +217,38 @@ public class Test {
         System.out.println(code);
 
     }
-
+    public void testIntegerToByteArray(){
+        int a = 1000;//101
+        byte[] b = new byte[4];
+        ByteBuffer  buff = ByteBuffer.wrap(b);
+        buff.putInt(a);
+        System.out.println(b[3]);
+    }
+    public void storeNumberOfBitsWritten() throws IOException {
+        String outputPath = "/home/mohamed/CSED_25/Year_3/Algo/Huffman Compression/try_saving_long.txt";
+        RandomAccessFile raf = new RandomAccessFile(outputPath, "rw");
+        raf.seek(0);
+        raf.writeLong(-1L);
+    }
+        public Node mockTree(){
+        Node root = new Node(null, 0L, null, null);
+        Node right = new Node(new byte[]{0b01100001}, 0L, null, null);
+        Node left = new Node(new byte[]{0b01100010}, 0L, null, null);
+        root.setLeft(left);
+        root.setRight(right);
+        return root;
+    }
+    private void extractNumberOfBitsWritten(IBitInputStream bitInputStream) throws IOException {
+        bitInputStream.fetch();
+        bitInputStream.setGetNumberOfBitsWrittenInCompressedFile(3);
+    }
+    private void extractNumberOfBytesPerWord(IBitInputStream bitInputStream) throws IOException {
+        bitInputStream.fetch();
+        numberOfBytesPerWord = 1;
+    }
+    private void extractLastByteArray(IBitInputStream bitInputStream) throws IOException {
+        bitInputStream.fetch();
+        int lastByteArraySize = 0;
+        byte[] lastByteArray = bitInputStream.readNBytes(lastByteArraySize);
+    }
 }
-//    private Map<byte[], Long> constructFrequencyMap() throws IOException {
-//        Map<byte[], Long> frequencyTable = new HashMap<>();
-//        //read byte[numberOfBytesPerWord] from input
-//        byte[] buffer = new byte[numberOfBytesPerWord];
-//        int bytesRead = 0;
-//        while ((bytesRead = bufferedInputStream.read(buffer)) != -1) {
-//            //put byte[numberOfBytesPerWord] in frequency table
-//            frequencyTable.put(buffer, frequencyTable.getOrDefault(buffer, 0L) + 1);
-//        }
-//        //return frequency table
-//        return frequencyTable;
-//    }
-
-
-//        PriorityQueue<Node> queue = new PriorityQueue<>((o1, o2) -> {
-//            return Long.compare(o1.getFrequency(), o2.getFrequency());
-//        });
-
-
-
-
-//    private Map<ByteArrayWrapper, Long> constructFrequencyMap() throws IOException {
-//        // Create input stream
-//        BufferedInputStream bufferedInputStream = createInputStream();
-//        Map<ByteArrayWrapper, Long> frequencyTable = new HashMap<>();
-//        //read byte[numberOfBytesPerWord] from input
-//        byte[] buffer = new byte[numberOfBytesPerWord];
-//        int bytesRead = 0;
-//        while ((bytesRead = bufferedInputStream.read(buffer)) != -1) {
-//            //put byte[] in frequency table ------------------------------- numberOfBytesPerWord instead of bytesRead in case of errors
-//            byte[] currentBuffer = Arrays.copyOf(buffer, bytesRead); // To enforce mutability of map keys
-//            frequencyTable.put(new ByteArrayWrapper(currentBuffer),
-//                    frequencyTable.getOrDefault(new ByteArrayWrapper(currentBuffer), 0L) + 1L);
-//        }
-//        bufferedInputStream.close();
-//        //return frequency table
-//        return frequencyTable;
-//    }
