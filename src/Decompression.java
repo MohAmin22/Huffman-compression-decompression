@@ -75,7 +75,6 @@ public class Decompression {
                     currentNode = currentNode.getLeft();
                 }
             }
-            if (root.isLeaf()) break;// To ensure not to have an Infinite loop if the tree has one node
         }
         // Store the Last byte[] before closing the stream
         storeLastByteArray(bitOutputStream);
