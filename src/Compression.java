@@ -10,7 +10,7 @@ public class Compression {
 
     public Compression(int numberOfBytesPerWord) {
         this.numberOfBytesPerWord = numberOfBytesPerWord;
-        this.MAX_CAPACITY = numberOfBytesPerWord * 500000; // MAX_CAPACITY has to be multiplier of numberOfBytesPerWord
+        this.MAX_CAPACITY = numberOfBytesPerWord * 5000000; // MAX_CAPACITY has to be multiplier of numberOfBytesPerWord
     }
 
     public void compress(String inputPath) {
