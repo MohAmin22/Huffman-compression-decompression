@@ -37,6 +37,8 @@ public class BitOutputStream implements IBitOutputStream {
             numberOfBitsWritten = outputList.size() * 8L + operationCounter;
             if (operationCounter != 0) { // buffer != 0 : condition may cause problems if the last byte is supposed to be zero
                 outputList.add(this.buffer);
+                buffer = 0;
+                operationCounter = 0;
             }
             // Save to the file
             save();

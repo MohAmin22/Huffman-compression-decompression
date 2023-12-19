@@ -3,7 +3,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 public class BitInputStream implements IBitInputStream {
-    private final int MAX_BUFFER_SIZE = 50000; // bytes
+    private final int MAX_BUFFER_SIZE = 500000; // bytes
     BufferedInputStream inputStream;
     private int operationCounter = 0;
     private final byte[] buffer = new byte[MAX_BUFFER_SIZE];
@@ -22,7 +22,7 @@ public class BitInputStream implements IBitInputStream {
     output: state integer if -1 the file has been ended
     */
     public int fetch() throws IOException {
-        if (numberOfBitsRead > getNumberOfBitsWrittenInCompressedFile) return -1; //
+        if (numberOfBitsRead > getNumberOfBitsWrittenInCompressedFile) return -1; // hide test
         if (currentBytePtr >= bytesRead) {
             currentBytePtr = 0;
             bytesRead = inputStream.read(buffer);
@@ -83,5 +83,14 @@ public class BitInputStream implements IBitInputStream {
     public void setGetNumberOfBitsWrittenInCompressedFile(long numberOfBitsWritten) {
         getNumberOfBitsWrittenInCompressedFile = numberOfBitsWritten;
     }
+    public long getNumberOfBitsWrittenInCompressedFile() {
+        return getNumberOfBitsWrittenInCompressedFile;
+    }
+    public long getNumberOfBitsRead() {
+        return numberOfBitsRead;
+    }
 
+    public int getOperationCounter() {
+        return operationCounter;
+    }
 }

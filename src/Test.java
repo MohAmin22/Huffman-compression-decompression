@@ -8,7 +8,7 @@ import java.util.*;
 public class Test {
     private final String inputPath = "/home/mohamed/CSED_25/Year_3/Algo/Huffman Compression/input.txt";
     private long fileSizeInBytes;
-    private final int numberOfBytesPerWord = 2;
+    private int numberOfBytesPerWord = 2;
 
     void testSeparator() {
         System.out.println(File.separatorChar);
@@ -229,5 +229,26 @@ public class Test {
         RandomAccessFile raf = new RandomAccessFile(outputPath, "rw");
         raf.seek(0);
         raf.writeLong(-1L);
+    }
+        public Node mockTree(){
+        Node root = new Node(null, 0L, null, null);
+        Node right = new Node(new byte[]{0b01100001}, 0L, null, null);
+        Node left = new Node(new byte[]{0b01100010}, 0L, null, null);
+        root.setLeft(left);
+        root.setRight(right);
+        return root;
+    }
+    private void extractNumberOfBitsWritten(IBitInputStream bitInputStream) throws IOException {
+        bitInputStream.fetch();
+        bitInputStream.setGetNumberOfBitsWrittenInCompressedFile(3);
+    }
+    private void extractNumberOfBytesPerWord(IBitInputStream bitInputStream) throws IOException {
+        bitInputStream.fetch();
+        numberOfBytesPerWord = 1;
+    }
+    private void extractLastByteArray(IBitInputStream bitInputStream) throws IOException {
+        bitInputStream.fetch();
+        int lastByteArraySize = 0;
+        byte[] lastByteArray = bitInputStream.readNBytes(lastByteArraySize);
     }
 }

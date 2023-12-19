@@ -15,4 +15,9 @@ public interface IBitInputStream {
 
     void setGetNumberOfBitsWrittenInCompressedFile(long numberOfBitsWritten);
 
+    long getNumberOfBitsWrittenInCompressedFile();
+
+    long getNumberOfBitsRead();
+    int getOperationCounter();
+
 }

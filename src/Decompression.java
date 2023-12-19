@@ -12,7 +12,10 @@ public class Decompression {
             this.setInput(inputPath);
             this.deCompressFile();
             long endTime = System.currentTimeMillis();
-            System.out.println("The deCompression is done in : " + (endTime - startTime) / 1000 + "  second(s)");
+            System.out.println(Utility.getYELLOW() +
+                    "The DeCompression is done in : " + (endTime - startTime) / 1000 + "  second(s)" +
+                    Utility.getRESET()
+            );
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
@@ -34,7 +37,6 @@ public class Decompression {
     }
 
     private Node extractHuffmanTree(IBitInputStream bitInputStream) throws IOException {
-        // TODO : handle status value
         bitInputStream.fetch();
         boolean isInternal = bitInputStream.readBit();
         if (!isInternal) {
@@ -76,6 +78,9 @@ public class Decompression {
                 }
             }
         }
+        if(currentNode.isLeaf() && bitInputStream.getOperationCounter() == 0) {
+            bitOutputStream.writeByteArray(currentNode.getWord());
+        }
         // Store the Last byte[] before closing the stream
         storeLastByteArray(bitOutputStream);
         bitOutputStream.endWriting();
@@ -98,17 +103,35 @@ public class Decompression {
             bitOutputStream.writeByteArray(lastByteArray);
         }
     }
+    private long huffmanTreeSize(Node root) {
+        if (root == null) return 0;
+        if (root.getLeft() == null && root.getRight() == null) return 1;
+        return 1 + huffmanTreeSize(root.getLeft()) + huffmanTreeSize(root.getRight());
+    }
+
 
     private void deCompressFile() throws IOException {
         IBitInputStream bitInputStream = createBitInputStream();
         // Extract number of bits written
         extractNumberOfBitsWritten(bitInputStream);
+        System.out.println(Utility.getCYAN() +
+                "Number of bits written: " + bitInputStream.getNumberOfBitsWrittenInCompressedFile() +
+                Utility.getRESET()
+        );
         // Extract number of bytes per word
         extractNumberOfBytesPerWord(bitInputStream);
+        System.out.println(Utility.getMAGENTA() +
+                "Number of bytes per word: " + numberOfBytesPerWord +
+                Utility.getRESET()
+        );
         // Extract the last byte[]
         extractLastByteArray(bitInputStream);
         // Extract huffman tree
         Node root = extractHuffmanTree(bitInputStream);
+        System.out.println(Utility.getRED() +
+                "Huffman Tree size : " + huffmanTreeSize(root) +
+                Utility.getRESET()
+        );
         // Decompress and Decode the compressed file
         decode(bitInputStream, root, root);
     }

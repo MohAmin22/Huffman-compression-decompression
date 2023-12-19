@@ -10,7 +10,7 @@ public class Compression {
 
     public Compression(int numberOfBytesPerWord) {
         this.numberOfBytesPerWord = numberOfBytesPerWord;
-        this.MAX_CAPACITY = numberOfBytesPerWord * 50000; // MAX_CAPACITY has to be multiplier of numberOfBytesPerWord
+        this.MAX_CAPACITY = numberOfBytesPerWord * 500000; // MAX_CAPACITY has to be multiplier of numberOfBytesPerWord
     }
 
     public void compress(String inputPath) {
@@ -19,7 +19,10 @@ public class Compression {
             this.setInput(inputPath);
             this.compressFile();
             long endTime = System.currentTimeMillis();
-            System.out.println("The Compression is done in : " + (endTime - startTime) / 1000 + "  second(s)");
+            System.out.println(Utility.getYELLOW() +
+                    "The Compression is done in : " + (endTime - startTime) / 1000 + "  second(s)"
+                    + Utility.getRESET()
+            );
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
@@ -126,20 +129,8 @@ public class Compression {
         if (root.isLeaf()) {
             bitOutputStream.writeBit(false);
             bitOutputStream.writeByteArray(root.getWord());
-            for (byte b : root.getWord()) {
-                String binaryString = "";
-                for (int i = 7; i >= 0; i--) { // Iterate from MSB to LSB
-                    int mask = 1 << i; // Create a mask for the current bit
-                    if ((b & mask) != 0) { // Check if the bit is set
-                        binaryString += "1";
-                    } else {
-                        binaryString += "0";
-                    }
-                }
-            }
         } else if (root.hasLeftChild() && root.hasRightChild()) {
             bitOutputStream.writeBit(true);
-
             storeHuffmanTree(root.getLeft(), bitOutputStream);
             storeHuffmanTree(root.getRight(), bitOutputStream);
         } else {
@@ -196,17 +187,35 @@ public class Compression {
         raf.writeLong(numberOfBitsWritten);
         raf.close();
     }
+    private void printCompressionRatio() {
+        File inputFile = new File(inputPath);
+        File outputFile = new File(getOutputPath());
+        String compressionRatio = String.format("%.3f",  ((double) inputFile.length()/ outputFile.length()));
+        System.out.println(Utility.getRED() +
+                "Compression ratio : " + compressionRatio
+                + Utility.getRESET()
+        );
+    }
 
     private void compressFile() throws IOException {
         // Collect statistics
         Map<ByteArrayWrapper, Long> frequencyTable = constructFrequencyMap();
         if (frequencyTable.isEmpty()) System.exit(22);
-        System.out.println("Table size: " + frequencyTable.size());
+
+        System.out.println(Utility.getCYAN()
+                + "Frequency map size: " + frequencyTable.size()
+                + Utility.getRESET()
+        );
+
         // Construct huffman tree
         PriorityQueue<Node> queue = convertFrequencyTableMapToPriorityQueue(frequencyTable);
         Node root = constructHuffmanTree(queue);
-        //System.out.println("Huffman Tree size : " + huffmanTreeSize(root));
-        // Write huffman tree to file
+
+        System.out.println(Utility.getGREEN()
+                + "Huffman Tree size : " + huffmanTreeSize(root)
+                + Utility.getRESET()
+        );
+
         BitOutputStream bitOutputStream = createBitOutputStream();
         // Preserve a place for number of bits written
         bitOutputStream.writeLong(numberOfBitsWritten);
@@ -221,7 +230,12 @@ public class Compression {
         // Encode and compress the file
         encodeAndCompress(bitOutputStream, huffmanTable);
         // Store the number of bits written in the beginning of the file
+        System.out.println(Utility.getBLUE()+
+                "Number of bits written: " + numberOfBitsWritten
+                + Utility.getRESET()
+        );
         storeNumberOfBitsWritten();
+        printCompressionRatio();
     }
 
 
