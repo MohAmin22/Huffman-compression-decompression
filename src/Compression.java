@@ -54,7 +54,7 @@ public class Compression {
                 start = end + 1;
                 end += numberOfBytesPerWord;
             }
-            if (end < MAX_CAPACITY) {
+            if (end < MAX_CAPACITY) {  // if it has gone out of the prev while and the end is less than MAX_CAPACITY than it is the last word
                 this.lastByteArray = Arrays.copyOfRange(buffer, start, bytesRead); // lastIndexOfInCompleteWord = bytesRead - 1;
             }
         }
@@ -147,23 +147,28 @@ public class Compression {
         BufferedInputStream bufferedInputStream = createInputStream();
         try {
             //read byte[numberOfBytesPerWord] from input
-            byte[] buffer = new byte[numberOfBytesPerWord];
+            byte[] buffer = new byte[MAX_CAPACITY];
             int bytesRead;
             while ((bytesRead = bufferedInputStream.read(buffer)) != -1) { // bytesRead in the last byte group may be n or less
-                if (bytesRead < numberOfBytesPerWord) break; // Last byte[] was saved in the file
-                // Find the code of the current word
-                String code = huffmanTable.get(new ByteArrayWrapper(buffer));
-                // Write the code to the output file
-                for (char c : code.toCharArray()) {
-                    if (c == '0') {
-                        bitOutputStream.writeBit(false);
-                    } else if (c == '1') {
-                        bitOutputStream.writeBit(true);
-                    } else {
-                        throw new IllegalArgumentException();
+                int start = 0, end = numberOfBytesPerWord - 1;
+                while (end < bytesRead) {
+                    byte[] currentBuffer = Arrays.copyOfRange(buffer, start, end + 1);
+                    // Find the code of the current word
+                    String code = huffmanTable.get(new ByteArrayWrapper(currentBuffer));
+                    // Write the code to the output file
+                    for (char c : code.toCharArray()) {
+                        if (c == '0') {
+                            bitOutputStream.writeBit(false);
+                        } else if (c == '1') {
+                            bitOutputStream.writeBit(true);
+                        } else {
+                            throw new IllegalArgumentException();
+                        }
                     }
+                    start = end + 1;
+                    end += numberOfBytesPerWord;
                 }
-            }
+            } // I don't need to ignore the last byte group encoding as it will break the loop the next iteration
             bitOutputStream.endWriting();
             numberOfBitsWritten = bitOutputStream.getNumberOfBitsWritten();
         } catch (IOException e) {
@@ -173,7 +178,6 @@ public class Compression {
             bitOutputStream.close();
         }
     }
-
     private long huffmanTreeSize(Node root) {
         if (root == null) return 0;
         if (root.getLeft() == null && root.getRight() == null) return 1;
@@ -187,10 +191,11 @@ public class Compression {
         raf.writeLong(numberOfBitsWritten);
         raf.close();
     }
+
     private void printCompressionRatio() {
         File inputFile = new File(inputPath);
         File outputFile = new File(getOutputPath());
-        String compressionRatio = String.format("%.3f",  ((double) inputFile.length()/ outputFile.length()));
+        String compressionRatio = String.format("%.3f", ((double) inputFile.length() / outputFile.length()));
         System.out.println(Utility.getRED() +
                 "Compression ratio : " + compressionRatio
                 + Utility.getRESET()
@@ -230,7 +235,7 @@ public class Compression {
         // Encode and compress the file
         encodeAndCompress(bitOutputStream, huffmanTable);
         // Store the number of bits written in the beginning of the file
-        System.out.println(Utility.getBLUE()+
+        System.out.println(Utility.getBLUE() +
                 "Number of bits written: " + numberOfBitsWritten
                 + Utility.getRESET()
         );
