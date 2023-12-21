@@ -10,8 +10,8 @@ public class Compression {
 
     public Compression(int numberOfBytesPerWord) {
         this.numberOfBytesPerWord = numberOfBytesPerWord;
-        this.MAX_CAPACITY = numberOfBytesPerWord * 5000000; // MAX_CAPACITY has to be multiplier of numberOfBytesPerWord
-    }
+        this.MAX_CAPACITY = numberOfBytesPerWord * 64 * 1024; // MAX_CAPACITY has to be multiplier of numberOfBytesPerWord
+    } //5000000
 
     public void compress(String inputPath) {
         try {
@@ -87,7 +87,7 @@ public class Compression {
      *  output : huffman table in ArrayList form
      */
     private Map<ByteArrayWrapper, HuffmanCode> constructHuffmanTable(Node root) {
-        Map<ByteArrayWrapper, HuffmanCode> huffmanTable = new HashMap<>(10);
+        Map<ByteArrayWrapper, HuffmanCode> huffmanTable = new HashMap<>();
         buildHuffmanTable(huffmanTable, new BitSet(), 0, root); // the root at level 0
         return huffmanTable;
     }
@@ -194,7 +194,7 @@ public class Compression {
     private void printCompressionRatio() {
         File inputFile = new File(inputPath);
         File outputFile = new File(getOutputPath());
-        String compressionRatio = String.format("%.3f", ((double) inputFile.length() / outputFile.length()));
+        String compressionRatio = String.format("%.3f", ((double) outputFile.length() / inputFile.length()));
         System.out.println(Utility.getRED() +
                 "Compression ratio : " + compressionRatio
                 + Utility.getRESET()

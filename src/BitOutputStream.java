@@ -7,6 +7,7 @@ import java.util.List;
 
 public class BitOutputStream implements IBitOutputStream {
     private final BufferedOutputStream outputStream;
+    private final int MAX_BUFFER_SIZE = 64 * 1024; // bytes
     private byte buffer = 0;
     private int operationCounter = 0;
     private long numberOfBitsWritten = 0;
@@ -26,15 +27,25 @@ public class BitOutputStream implements IBitOutputStream {
             buffer = 0;
             operationCounter = 0;
         }
+        if(outputList.size() >= MAX_BUFFER_SIZE) {
+            try {
+                numberOfBitsWritten += outputList.size() * 8L + operationCounter;
+                save();
+                flush();
+                outputList.clear();
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
+        }
     }
 
     /*
      It must be called after all bits have been written to ensure that the last byte is written
      in the case of the last byte is not full so the counter != 8, so it won't be saved automatically
     */
-    public void endWriting() {
+    public void endWriting() {  // way of computing numberOfBitsWritten will differ
         try {
-            numberOfBitsWritten = outputList.size() * 8L + operationCounter;
+            numberOfBitsWritten += outputList.size() * 8L + operationCounter;
             if (operationCounter != 0) { // buffer != 0 : condition may cause problems if the last byte is supposed to be zero
                 outputList.add(this.buffer);
                 buffer = 0;
