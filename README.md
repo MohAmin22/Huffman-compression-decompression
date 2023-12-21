@@ -25,6 +25,8 @@ java -jar huffman_20011502.jar d absolute_path_to_input_file
 
 ![image](https://github.com/MohAmin22/Huffman-compression-decompression/assets/71905033/0b21a3d6-5f5e-4b58-8388-9fa4ee730d24)
 
+Jar file can be found in Huffman folder. 
+
 ## Where to find?
 the compressed file will be generated in the same folder of the original file under the name : "20011502.<n>.<file_name>.hc".<br>
-the extracted file will follow the foramt : "extracted.<file_name>"
+the extracted file will follow the foramt : "extracted.<file_name>".
