@@ -12,8 +12,19 @@ java -jar huffman_20011502.jar c absolute_path_to_input_file n
 ```
 where n : the number of bytes per word
 
+### Example
+
+![image](https://github.com/MohAmin22/Huffman-compression-decompression/assets/71905033/c7ad71ab-7a78-426f-922d-a233b97f48bd)
+
 
 In case of decompression
 ```console
 java -jar huffman_20011502.jar d absolute_path_to_input_file
 ```
+### Example
+
+![image](https://github.com/MohAmin22/Huffman-compression-decompression/assets/71905033/0b21a3d6-5f5e-4b58-8388-9fa4ee730d24)
+
+## Where to find?
+the compressed file will be generated in the same folder of the original file under the name : "20011502.<n>.<file_name>.hc".
+the extracted file will follow the foramt : extracted.<file_name>
