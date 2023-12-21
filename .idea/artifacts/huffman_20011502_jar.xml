@@ -1,6 +1,6 @@
 <component name="ArtifactManager">
   <artifact type="jar" name="huffman_20011502:jar">
-    <output-path>$USER_HOME$/CSED_25/Year_3/Algo/Huffman_compression_executable</output-path>
+    <output-path>$USER_HOME$/Huffman Compression</output-path>
     <root id="archive" name="Huffman Compression.jar">
       <element id="module-output" name="Huffman Compression" />
     </root>
