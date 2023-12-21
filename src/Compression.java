@@ -49,8 +49,8 @@ public class Compression {
             int start = 0, end = numberOfBytesPerWord - 1;
             while (end < bytesRead) {
                 byte[] currentBuffer = Utility.copyByteArray(buffer, start, end + 1); // To enforce mutability of map keys
-                frequencyTable.put(new ByteArrayWrapper(currentBuffer),
-                        frequencyTable.getOrDefault(new ByteArrayWrapper(currentBuffer), 0L) + 1L);
+                ByteArrayWrapper byteArrayWrapper = new ByteArrayWrapper(currentBuffer);
+                frequencyTable.compute(byteArrayWrapper, (key, value) -> (value == null ? 1 : value + 1));
                 start = end + 1;
                 end += numberOfBytesPerWord;
             }
