@@ -3,8 +3,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 public class BitInputStream implements IBitInputStream {
-    private final int MAX_BUFFER_SIZE = 500000; // bytes
     BufferedInputStream inputStream;
+    private final int MAX_BUFFER_SIZE = 64 * 1024; // bytes
     private int operationCounter = 0;
     private final byte[] buffer = new byte[MAX_BUFFER_SIZE];
     private int currentBytePtr = 0;
@@ -14,7 +14,6 @@ public class BitInputStream implements IBitInputStream {
 
     public BitInputStream(FileInputStream fis) {
         inputStream = new BufferedInputStream(fis);
-        // buffer = inputStream.readAllBytes();
     }
 
     /*
@@ -83,9 +82,11 @@ public class BitInputStream implements IBitInputStream {
     public void setGetNumberOfBitsWrittenInCompressedFile(long numberOfBitsWritten) {
         getNumberOfBitsWrittenInCompressedFile = numberOfBitsWritten;
     }
+
     public long getNumberOfBitsWrittenInCompressedFile() {
         return getNumberOfBitsWrittenInCompressedFile;
     }
+
     public long getNumberOfBitsRead() {
         return numberOfBitsRead;
     }

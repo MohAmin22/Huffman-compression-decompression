@@ -110,6 +110,7 @@ public class Test {
             buildHuffmanTable(huffmanTable, code + "1", node.getRight());
         }
     }
+
     private FileOutputStream storeHuffmanTable(List<WordCodePair> huffmanTable) throws IOException {
         // Generate output file path
         String inputFileName = this.inputPath.substring(this.inputPath.lastIndexOf(File.separatorChar) + 1);
@@ -132,6 +133,7 @@ public class Test {
         oos.flush();
         return fos;
     }
+
     private List<WordCodePair> loadHuffmanTable(String filePath) throws IOException, ClassNotFoundException {
         List<WordCodePair> huffmanTable = null;
         FileInputStream fis = new FileInputStream(filePath);
@@ -142,35 +144,37 @@ public class Test {
         byte[] buf;
         try {
             huffmanTable = (List<WordCodePair>) ois.readObject();
-             a = ois.readLong();
-             //s = ois.readUTF();
+            a = ois.readLong();
+            //s = ois.readUTF();
             buf = ois.readNBytes(3);
-             h2 = (List<WordCodePair>) ois.readObject();
+            h2 = (List<WordCodePair>) ois.readObject();
 
         } catch (EOFException e) {
             System.out.println("End of file reached");
         }
         return huffmanTable;
     }
+
     private String binarySearch(List<WordCodePair> huffmanTable, ByteArrayWrapper word) {
         huffmanTable.sort((o1, o2) -> Arrays.compare(o1.getWord(), o2.getWord()));
         int wordCodeIndex = Collections.binarySearch(huffmanTable, new WordCodePair(word.getBuffer(), ""),
                 (o1, o2) -> Arrays.compare(o1.getWord(), o2.getWord()));
         assert wordCodeIndex >= 0;
-        return  wordCodeIndex >= 0 ? huffmanTable.get(wordCodeIndex).getCode() : "Not found";
+        return wordCodeIndex >= 0 ? huffmanTable.get(wordCodeIndex).getCode() : "Not found";
     }
+
     void testOutput() throws IOException {
         FileOutputStream fos = new FileOutputStream("/home/mohamed/CSED_25/Year_3/Algo/Huffman Compression/out.txt");
         ObjectOutputStream oos = new ObjectOutputStream(fos);
         byte x = (byte) 0b111;
         byte[] r = new byte[]{x};
-        for(int i = 0 ; i < 10; i++) {
+        for (int i = 0; i < 10; i++) {
             oos.write(r);
         }
         oos.flush();
         FileInputStream fis = new FileInputStream("/home/mohamed/CSED_25/Year_3/Algo/Huffman Compression/out.txt");
         ObjectInputStream ois = new ObjectInputStream(fis);
-        for(int i = 0 ; i < 10; i++) {
+        for (int i = 0; i < 10; i++) {
             System.out.println(ois.readByte());
         }
 //        int a = -1;
@@ -179,12 +183,13 @@ public class Test {
 //        oos.writeInt(5);
 //        oos.writeInt(3);
     }
+
     void testOutput2() throws IOException {
         FileOutputStream fos = new FileOutputStream("/home/mohamed/CSED_25/Year_3/Algo/Huffman Compression/out.txt");
         BufferedOutputStream bof = new BufferedOutputStream(fos);
         byte x = (byte) 0b111;
         byte[] r = new byte[]{x};
-        for(int i = 0 ; i < 10; i++) {
+        for (int i = 0; i < 10; i++) {
             byte[] r1 = new byte[]{(byte) (x + i)};
             bof.write(r1);
         }
@@ -192,7 +197,7 @@ public class Test {
         FileInputStream fis = new FileInputStream("/home/mohamed/CSED_25/Year_3/Algo/Huffman Compression/out.txt");
         BufferedInputStream ois = new BufferedInputStream(fis);
         byte[] b = new byte[1];
-        for(int i = 0 ; i < 10; i++) {
+        for (int i = 0; i < 10; i++) {
             System.out.println(ois.read(b));
         }
 //        int a = -1;
@@ -217,20 +222,23 @@ public class Test {
         System.out.println(code);
 
     }
-    public void testIntegerToByteArray(){
+
+    public void testIntegerToByteArray() {
         int a = 1000;//101
         byte[] b = new byte[4];
-        ByteBuffer  buff = ByteBuffer.wrap(b);
+        ByteBuffer buff = ByteBuffer.wrap(b);
         buff.putInt(a);
         System.out.println(b[3]);
     }
+
     public void storeNumberOfBitsWritten() throws IOException {
         String outputPath = "/home/mohamed/CSED_25/Year_3/Algo/Huffman Compression/try_saving_long.txt";
         RandomAccessFile raf = new RandomAccessFile(outputPath, "rw");
         raf.seek(0);
         raf.writeLong(-1L);
     }
-        public Node mockTree(){
+
+    public Node mockTree() {
         Node root = new Node(null, 0L, null, null);
         Node right = new Node(new byte[]{0b01100001}, 0L, null, null);
         Node left = new Node(new byte[]{0b01100010}, 0L, null, null);
@@ -238,17 +246,25 @@ public class Test {
         root.setRight(right);
         return root;
     }
+
     private void extractNumberOfBitsWritten(IBitInputStream bitInputStream) throws IOException {
         bitInputStream.fetch();
         bitInputStream.setGetNumberOfBitsWrittenInCompressedFile(3);
     }
+
     private void extractNumberOfBytesPerWord(IBitInputStream bitInputStream) throws IOException {
         bitInputStream.fetch();
         numberOfBytesPerWord = 1;
     }
+
     private void extractLastByteArray(IBitInputStream bitInputStream) throws IOException {
         bitInputStream.fetch();
         int lastByteArraySize = 0;
         byte[] lastByteArray = bitInputStream.readNBytes(lastByteArraySize);
+    }
+
+    public void testBitSet() {
+        BitSet bitSet = new BitSet();
+        System.out.println(bitSet.get(100));
     }
 }

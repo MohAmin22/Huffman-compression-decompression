@@ -10,8 +10,8 @@ public class Compression {
 
     public Compression(int numberOfBytesPerWord) {
         this.numberOfBytesPerWord = numberOfBytesPerWord;
-        this.MAX_CAPACITY = numberOfBytesPerWord * 5000000; // MAX_CAPACITY has to be multiplier of numberOfBytesPerWord
-    }
+        this.MAX_CAPACITY = numberOfBytesPerWord * 64 * 1024; // MAX_CAPACITY has to be multiplier of numberOfBytesPerWord
+    } //5000000
 
     public void compress(String inputPath) {
         try {
@@ -48,14 +48,14 @@ public class Compression {
         while ((bytesRead = bufferedInputStream.read(buffer)) != -1) {
             int start = 0, end = numberOfBytesPerWord - 1;
             while (end < bytesRead) {
-                byte[] currentBuffer = Arrays.copyOfRange(buffer, start, end + 1); // To enforce mutability of map keys
+                byte[] currentBuffer = Utility.copyByteArray(buffer, start, end + 1); // To enforce mutability of map keys
                 frequencyTable.put(new ByteArrayWrapper(currentBuffer),
                         frequencyTable.getOrDefault(new ByteArrayWrapper(currentBuffer), 0L) + 1L);
                 start = end + 1;
                 end += numberOfBytesPerWord;
             }
-            if (end < MAX_CAPACITY) {
-                this.lastByteArray = Arrays.copyOfRange(buffer, start, bytesRead); // lastIndexOfInCompleteWord = bytesRead - 1;
+            if (end < MAX_CAPACITY) {  // if it has gone out of the prev while and the end is less than MAX_CAPACITY than it is the last word
+                this.lastByteArray = Utility.copyByteArray(buffer, start, bytesRead); // lastIndexOfInCompleteWord = bytesRead - 1;
             }
         }
         bufferedInputStream.close();
@@ -86,21 +86,26 @@ public class Compression {
      *  input : root of huffman tree
      *  output : huffman table in ArrayList form
      */
-    private Map<ByteArrayWrapper, String> constructHuffmanTable(Node root) {
-        Map<ByteArrayWrapper, String> huffmanTable = new HashMap<>();
-        buildHuffmanTable(huffmanTable, "", root);
+    private Map<ByteArrayWrapper, HuffmanCode> constructHuffmanTable(Node root) {
+        Map<ByteArrayWrapper, HuffmanCode> huffmanTable = new HashMap<>();
+        buildHuffmanTable(huffmanTable, new BitSet(), 0, root); // the root at level 0
         return huffmanTable;
     }
 
-    private void buildHuffmanTable(Map<ByteArrayWrapper, String> huffmanTable, String code, Node node) {
+    private void buildHuffmanTable(Map<ByteArrayWrapper, HuffmanCode> huffmanTable, BitSet code, int level, Node node) {
         if (node.getLeft() == null && node.getRight() == null) {
-            huffmanTable.put(new ByteArrayWrapper(node.getWord()), code);
+            BitSet finalCode = (BitSet) code.clone();
+            // Clear bits that are not part of the current code, as I just concerned about the previous levels(nodes) only
+            if(level <= code.length()) finalCode.clear(level, code.length());
+            huffmanTable.put(new ByteArrayWrapper(node.getWord()), new HuffmanCode(finalCode, level));
         }
         if (node.getLeft() != null) {
-            buildHuffmanTable(huffmanTable, code + "0", node.getLeft());
+            code.set(level, false); // set the bit at this level to 0
+            buildHuffmanTable(huffmanTable, code, level + 1, node.getLeft());
         }
         if (node.getRight() != null) {
-            buildHuffmanTable(huffmanTable, code + "1", node.getRight());
+            code.set(level, true);
+            buildHuffmanTable(huffmanTable, code, level + 1, node.getRight());
         }
     }
 
@@ -143,27 +148,26 @@ public class Compression {
         bitOutputStream.writeInt(this.numberOfBytesPerWord);
     }
 
-    private void encodeAndCompress(BitOutputStream bitOutputStream, Map<ByteArrayWrapper, String> huffmanTable) throws IOException {
+    private void encodeAndCompress(BitOutputStream bitOutputStream, Map<ByteArrayWrapper, HuffmanCode> huffmanTable) throws IOException {
         BufferedInputStream bufferedInputStream = createInputStream();
         try {
             //read byte[numberOfBytesPerWord] from input
-            byte[] buffer = new byte[numberOfBytesPerWord];
+            byte[] buffer = new byte[MAX_CAPACITY];
             int bytesRead;
             while ((bytesRead = bufferedInputStream.read(buffer)) != -1) { // bytesRead in the last byte group may be n or less
-                if (bytesRead < numberOfBytesPerWord) break; // Last byte[] was saved in the file
-                // Find the code of the current word
-                String code = huffmanTable.get(new ByteArrayWrapper(buffer));
-                // Write the code to the output file
-                for (char c : code.toCharArray()) {
-                    if (c == '0') {
-                        bitOutputStream.writeBit(false);
-                    } else if (c == '1') {
-                        bitOutputStream.writeBit(true);
-                    } else {
-                        throw new IllegalArgumentException();
+                int start = 0, end = numberOfBytesPerWord - 1;
+                while (end < bytesRead) {
+                    byte[] currentBuffer = Utility.copyByteArray(buffer, start, end + 1);
+                    // Find the code of the current word
+                    HuffmanCode code = huffmanTable.get(new ByteArrayWrapper(currentBuffer));
+                    // Write the code to the output file
+                    for (int i = 0; i < code.getCodeLength(); i++) {
+                        bitOutputStream.writeBit(code.getBit(i));
                     }
+                    start = end + 1;
+                    end += numberOfBytesPerWord;
                 }
-            }
+            } // I don't need to ignore the last byte group encoding as it will break the loop the next iteration
             bitOutputStream.endWriting();
             numberOfBitsWritten = bitOutputStream.getNumberOfBitsWritten();
         } catch (IOException e) {
@@ -173,7 +177,6 @@ public class Compression {
             bitOutputStream.close();
         }
     }
-
     private long huffmanTreeSize(Node root) {
         if (root == null) return 0;
         if (root.getLeft() == null && root.getRight() == null) return 1;
@@ -187,10 +190,11 @@ public class Compression {
         raf.writeLong(numberOfBitsWritten);
         raf.close();
     }
+
     private void printCompressionRatio() {
         File inputFile = new File(inputPath);
         File outputFile = new File(getOutputPath());
-        String compressionRatio = String.format("%.3f",  ((double) inputFile.length()/ outputFile.length()));
+        String compressionRatio = String.format("%.3f", ((double) outputFile.length() / inputFile.length()));
         System.out.println(Utility.getRED() +
                 "Compression ratio : " + compressionRatio
                 + Utility.getRESET()
@@ -226,11 +230,11 @@ public class Compression {
         // Store huffman tree in the file
         storeHuffmanTree(root, bitOutputStream);
         // Extract huffman table ( word -> code )
-        Map<ByteArrayWrapper, String> huffmanTable = constructHuffmanTable(root);
+        Map<ByteArrayWrapper, HuffmanCode> huffmanTable = constructHuffmanTable(root);
         // Encode and compress the file
         encodeAndCompress(bitOutputStream, huffmanTable);
         // Store the number of bits written in the beginning of the file
-        System.out.println(Utility.getBLUE()+
+        System.out.println(Utility.getBLUE() +
                 "Number of bits written: " + numberOfBitsWritten
                 + Utility.getRESET()
         );
