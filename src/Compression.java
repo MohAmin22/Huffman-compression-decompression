@@ -86,21 +86,26 @@ public class Compression {
      *  input : root of huffman tree
      *  output : huffman table in ArrayList form
      */
-    private Map<ByteArrayWrapper, String> constructHuffmanTable(Node root) {
-        Map<ByteArrayWrapper, String> huffmanTable = new HashMap<>();
-        buildHuffmanTable(huffmanTable, "", root);
+    private Map<ByteArrayWrapper, HuffmanCode> constructHuffmanTable(Node root) {
+        Map<ByteArrayWrapper, HuffmanCode> huffmanTable = new HashMap<>(10);
+        buildHuffmanTable(huffmanTable, new BitSet(), 0, root); // the root at level 0
         return huffmanTable;
     }
 
-    private void buildHuffmanTable(Map<ByteArrayWrapper, String> huffmanTable, String code, Node node) {
+    private void buildHuffmanTable(Map<ByteArrayWrapper, HuffmanCode> huffmanTable, BitSet code, int level, Node node) {
         if (node.getLeft() == null && node.getRight() == null) {
-            huffmanTable.put(new ByteArrayWrapper(node.getWord()), code);
+            BitSet finalCode = (BitSet) code.clone();
+            // Clear bits that are not part of the current code, as I just concerned about the previous levels(nodes) only
+            if(level <= code.length()) finalCode.clear(level, code.length());
+            huffmanTable.put(new ByteArrayWrapper(node.getWord()), new HuffmanCode(finalCode, level));
         }
         if (node.getLeft() != null) {
-            buildHuffmanTable(huffmanTable, code + "0", node.getLeft());
+            code.set(level, false); // set the bit at this level to 0
+            buildHuffmanTable(huffmanTable, code, level + 1, node.getLeft());
         }
         if (node.getRight() != null) {
-            buildHuffmanTable(huffmanTable, code + "1", node.getRight());
+            code.set(level, true);
+            buildHuffmanTable(huffmanTable, code, level + 1, node.getRight());
         }
     }
 
@@ -143,7 +148,7 @@ public class Compression {
         bitOutputStream.writeInt(this.numberOfBytesPerWord);
     }
 
-    private void encodeAndCompress(BitOutputStream bitOutputStream, Map<ByteArrayWrapper, String> huffmanTable) throws IOException {
+    private void encodeAndCompress(BitOutputStream bitOutputStream, Map<ByteArrayWrapper, HuffmanCode> huffmanTable) throws IOException {
         BufferedInputStream bufferedInputStream = createInputStream();
         try {
             //read byte[numberOfBytesPerWord] from input
@@ -154,16 +159,10 @@ public class Compression {
                 while (end < bytesRead) {
                     byte[] currentBuffer = Arrays.copyOfRange(buffer, start, end + 1);
                     // Find the code of the current word
-                    String code = huffmanTable.get(new ByteArrayWrapper(currentBuffer));
+                    HuffmanCode code = huffmanTable.get(new ByteArrayWrapper(currentBuffer));
                     // Write the code to the output file
-                    for (char c : code.toCharArray()) {
-                        if (c == '0') {
-                            bitOutputStream.writeBit(false);
-                        } else if (c == '1') {
-                            bitOutputStream.writeBit(true);
-                        } else {
-                            throw new IllegalArgumentException();
-                        }
+                    for (int i = 0; i < code.getCodeLength(); i++) {
+                        bitOutputStream.writeBit(code.getBit(i));
                     }
                     start = end + 1;
                     end += numberOfBytesPerWord;
@@ -231,7 +230,7 @@ public class Compression {
         // Store huffman tree in the file
         storeHuffmanTree(root, bitOutputStream);
         // Extract huffman table ( word -> code )
-        Map<ByteArrayWrapper, String> huffmanTable = constructHuffmanTable(root);
+        Map<ByteArrayWrapper, HuffmanCode> huffmanTable = constructHuffmanTable(root);
         // Encode and compress the file
         encodeAndCompress(bitOutputStream, huffmanTable);
         // Store the number of bits written in the beginning of the file
