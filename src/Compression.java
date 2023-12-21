@@ -48,14 +48,14 @@ public class Compression {
         while ((bytesRead = bufferedInputStream.read(buffer)) != -1) {
             int start = 0, end = numberOfBytesPerWord - 1;
             while (end < bytesRead) {
-                byte[] currentBuffer = Arrays.copyOfRange(buffer, start, end + 1); // To enforce mutability of map keys
+                byte[] currentBuffer = Utility.copyByteArray(buffer, start, end + 1); // To enforce mutability of map keys
                 frequencyTable.put(new ByteArrayWrapper(currentBuffer),
                         frequencyTable.getOrDefault(new ByteArrayWrapper(currentBuffer), 0L) + 1L);
                 start = end + 1;
                 end += numberOfBytesPerWord;
             }
             if (end < MAX_CAPACITY) {  // if it has gone out of the prev while and the end is less than MAX_CAPACITY than it is the last word
-                this.lastByteArray = Arrays.copyOfRange(buffer, start, bytesRead); // lastIndexOfInCompleteWord = bytesRead - 1;
+                this.lastByteArray = Utility.copyByteArray(buffer, start, bytesRead); // lastIndexOfInCompleteWord = bytesRead - 1;
             }
         }
         bufferedInputStream.close();
@@ -157,7 +157,7 @@ public class Compression {
             while ((bytesRead = bufferedInputStream.read(buffer)) != -1) { // bytesRead in the last byte group may be n or less
                 int start = 0, end = numberOfBytesPerWord - 1;
                 while (end < bytesRead) {
-                    byte[] currentBuffer = Arrays.copyOfRange(buffer, start, end + 1);
+                    byte[] currentBuffer = Utility.copyByteArray(buffer, start, end + 1);
                     // Find the code of the current word
                     HuffmanCode code = huffmanTable.get(new ByteArrayWrapper(currentBuffer));
                     // Write the code to the output file
